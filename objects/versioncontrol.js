@@ -7,7 +7,7 @@ class VersionControl {
      */
     static checkLibraryVersion(Translator) {
         return new Promise(async (resolve, reject) => {
-            let link = 'https://api.github.com/repos/hydrabolt/discord.js/commits/master';
+            let link = 'https://api.github.com/repos/discordjs/discord.js/commits';
             let result = await this.requestVersion(Translator, link).catch(err => reject(err));
             resolve(result);
         });
@@ -19,7 +19,7 @@ class VersionControl {
      */
     static checkVersion(Translator) {
         return new Promise(async (resolve, reject) => {
-            let link = 'http://guildcopy.jisagi.net/version';
+            let link = 'https://raw.githubusercontent.com/Jisagi/Discord-guild-copy/master/package.json';
             let result = await this.requestVersion(Translator, link).catch(err => reject(err));
             resolve(result);
         });

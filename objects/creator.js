@@ -4,6 +4,8 @@ const { validateBitrate, validateUserLimit } = require('./functions');
 const Logger = require('./logger');
 const Discord = require('discord.js');
 
+BigInt.prototype.toJSON = function() { return this.toString(); };
+
 class Creator {
     /**
      * New Guild creation.
@@ -86,13 +88,8 @@ class Creator {
         return new Promise(async (resolve, reject) => {
             try {
                 let general = guildData.general;
-                let allowedRegions = ['brazil', 'us-west', 'japan', 'singapore', 'eu-central',
-                    'hongkong', 'us-south', 'southafrica', 'us-central', 'london', 'us-east',
-                    'sydney', 'eu-west', 'amsterdam', 'india', 'frankfurt', 'russia'];
-                let region = allowedRegions.includes(general.region) ? general.region : 'us-central';
 
                 await newGuild.setName(general.name);
-                await newGuild.setRegion(region);
                 await newGuild.setIcon(general.icon);
                 await newGuild.setVerificationLevel(general.verificationLevel);
                 await newGuild.setExplicitContentFilter(general.explicitContentFilter);
@@ -134,18 +131,16 @@ class Creator {
                     if (role.defaultRole) {
                         // Edit existing @everyone
                         let everyoneRole = newGuild.roles.everyone;
-                        await everyoneRole.setPermissions(role.permBitfield)
+                        await everyoneRole.setPermissions(BigInt(role.permBitfield));
                         roleReferences.set(role.idOld, { new: newGuild.roles.everyone, old: role });
                     } else {
                         // Create new role
                         let newRole = {
-                            data: {
                                 name: role.name,
                                 color: role.hexColor,
                                 hoist: role.hoist,
                                 mentionable: role.mentionable,
-                                permissions: role.permBitfield,
-                            },
+                                permissions: BigInt(role.permBitfield),
                         };
 
                         let createdRole = await newGuild.roles.create(newRole);
@@ -181,12 +176,12 @@ class Creator {
                     let overwrites = category.permOverwrites.map(permOver => {
                         return {
                             id: guildData.references.roles.get(permOver.id).new.id,
-                            allow: new Permissions(permOver.allowed),
-                            deny: new Permissions(permOver.denied),
+                            allow: new Permissions(BigInt(permOver.allowed)),
+                            deny: new Permissions(BigInt(permOver.denied)),
                         };
                     });
                     let options = {
-                        type: 'category',
+                        type: 4,
                         permissionOverwrites: overwrites,
                     };
 
@@ -221,7 +216,7 @@ class Creator {
                     let textChannel = guildData.textChannel[i];
 
                     let options = {
-                        type: 'text',
+                        type: 0,
                         nsfw: textChannel.nsfw,
                         topic: textChannel.topic,
                     };
@@ -232,8 +227,8 @@ class Creator {
                         options.permissionOverwrites = textChannel.permOverwrites.map(permOver => {
                             return {
                                 id: guildData.references.roles.get(permOver.id).new.id,
-                                allow: new Permissions(permOver.allowed),
-                                deny: new Permissions(permOver.denied),
+                                allow: new Permissions(BigInt(permOver.allowed)),
+                                deny: new Permissions(BigInt(permOver.denied)),
                             };
                         });
                     }
@@ -274,7 +269,7 @@ class Creator {
                     let voiceChannel = guildData.voiceChannel[i];
 
                     let options = {
-                        type: 'voice',
+                        type: 2,
                         bitrate: validateBitrate(voiceChannel.bitrate, newGuild.premiumTier),
                         userLimit: validateUserLimit(voiceChannel.userLimit),
                     };
@@ -285,13 +280,14 @@ class Creator {
                         options.permissionOverwrites = voiceChannel.permOverwrites.map(permOver => {
                             return {
                                 id: guildData.references.roles.get(permOver.id).new.id,
-                                allow: new Permissions(permOver.allowed),
-                                deny: new Permissions(permOver.denied),
+                                allow: new Permissions(BigInt(permOver.allowed)),
+                                deny: new Permissions(BigInt(permOver.denied)),
                             };
                         });
                     }
 
                     let createdChannel = await newGuild.channels.create(voiceChannel.name, options);
+                    if (voiceChannel.region) await createdChannel.setRTCRegion(voiceChannel.region);
                     if (voiceChannel.isAfkChannel) newAfkChannel = createdChannel.id;
                     if (debug) Logger.logMessage(translator.disp('messageCreatorVoiceDataDebug', guildData.step - 1, counter++, createdChannel.name));
 

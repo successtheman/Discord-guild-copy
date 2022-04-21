@@ -70,7 +70,6 @@ class Serializer {
     static getGeneralData(guild) {
         return {
             name: guild.name,
-            region: guild.region,
             icon: guild.iconURL({ size: 2048 }),
             verificationLevel: guild.verificationLevel,
             afkTimeout: guild.afkTimeout,
@@ -101,7 +100,7 @@ class Serializer {
                 position: role.position,
                 rawPosition: role.rawPosition,
                 defaultRole: guildToCopy.roles.everyone.id === role.id,
-                permBitfield: role.permissions.bitfield,
+                permBitfield: role.permissions.bitfield.toString(),
             };
         });
 
@@ -117,16 +116,16 @@ class Serializer {
      * @returns {Object[]} Serialized category channels
      */
     static serializeCategories(guildToCopy) {
-        let categoryCollection = guildToCopy.channels.cache.filter(c => c.type === 'category');
+        let categoryCollection = guildToCopy.channels.cache.filter(c => c.type === 4);
         categoryCollection = categoryCollection.sort((a, b) => a.position - b.position);
         let categories = categoryCollection.map(category => {
-            let permOverwritesCollection = category.permissionOverwrites.filter(pOver => pOver.type === 'role');
+            let permOverwritesCollection = category.permissionOverwrites.cache.filter(pOver => pOver.type === 'role');
             permOverwritesCollection = permOverwritesCollection.filter(pOver => guildToCopy.roles.cache.has(pOver.id));
             let permOverwrites = permOverwritesCollection.map(pOver => {
                 return {
                     id: pOver.id,
-                    allowed: pOver.allow.bitfield,
-                    denied: pOver.deny.bitfield,
+                    allowed: pOver.allow.bitfield.toString(),
+                    denied: pOver.deny.bitfield.toString(),
                 };
             });
 
@@ -151,16 +150,16 @@ class Serializer {
      * @returns {Object[]} Serialized text channels
      */
     static serializeTextChannels(guildToCopy) {
-        let textChannelCollection = guildToCopy.channels.cache.filter(c => c.type === 'text');
+        let textChannelCollection = guildToCopy.channels.cache.filter(c => c.type === 0);
         textChannelCollection = textChannelCollection.sort((a, b) => a.rawPosition - b.rawPosition);
         let textChannel = textChannelCollection.map(tCh => {
-            let permOverwritesCollection = tCh.permissionOverwrites.filter(pOver => pOver.type === 'role');
+            let permOverwritesCollection = tCh.permissionOverwrites.cache.filter(pOver => pOver.type === 'role');
             permOverwritesCollection = permOverwritesCollection.filter(pOver => guildToCopy.roles.cache.has(pOver.id));
             let permOverwrites = permOverwritesCollection.map(pOver => {
                 return {
                     id: pOver.id,
-                    allowed: pOver.allow.bitfield,
-                    denied: pOver.deny.bitfield,
+                    allowed: pOver.allow.bitfield.toString(),
+                    denied: pOver.deny.bitfield.toString(),
                 };
             });
 
@@ -172,7 +171,7 @@ class Serializer {
                 isSystemChannel: guildToCopy.systemChannelID === tCh.id,
                 position: tCh.position,
                 rawPosition: tCh.rawPosition,
-                parentCat: tCh.parentID,
+                parentCat: tCh.parentId,
                 permLocked: tCh.permissionsLocked ? tCh.permissionsLocked : false,
                 permOverwrites: tCh.permissionsLocked ? null : permOverwrites,
             };
@@ -190,28 +189,29 @@ class Serializer {
      * @returns {Object[]} Serialized voice channels
      */
     static serializeVoiceChannels(guildToCopy) {
-        let voiceChannelCollection = guildToCopy.channels.cache.filter(c => c.type === 'voice');
+        let voiceChannelCollection = guildToCopy.channels.cache.filter(c => c.type === 2);
         voiceChannelCollection = voiceChannelCollection.sort((a, b) => a.rawPosition - b.rawPosition);
         let voiceChannel = voiceChannelCollection.map(vCh => {
-            let permOverwritesCollection = vCh.permissionOverwrites.filter(pOver => pOver.type === 'role');
+            let permOverwritesCollection = vCh.permissionOverwrites.cache.filter(pOver => pOver.type === 'role');
             permOverwritesCollection = permOverwritesCollection.filter(pOver => guildToCopy.roles.cache.has(pOver.id));
             let permOverwrites = permOverwritesCollection.map(pOver => {
                 return {
                     id: pOver.id,
-                    allowed: pOver.allow.bitfield,
-                    denied: pOver.deny.bitfield,
+                    allowed: pOver.allow.bitfield.toString(),
+                    denied: pOver.deny.bitfield.toString(),
                 };
             });
 
             return {
                 id: vCh.id,
                 name: vCh.name,
+                region: vCh.rtcRegion,
                 position: vCh.position,
                 rawPosition: vCh.rawPosition,
-                parentCat: vCh.parentID,
+                parentCat: vCh.parentId,
                 bitrate: vCh.bitrate,
                 userLimit: vCh.userLimit,
-                isAfkChannel: guildToCopy.afkChannelID === vCh.id,
+                isAfkChannel: guildToCopy.afkChannelId === vCh.id,
                 permLocked: vCh.permissionsLocked ? vCh.permissionsLocked : false,
                 permOverwrites: vCh.permissionsLocked ? null : permOverwrites,
             };

@@ -10,7 +10,7 @@ const Creator = require('./objects/creator');
 const Logger = require('./objects/logger');
 const Translator = require('./objects/translator');
 const settings = require('./settings.json');
-const client = new Discord.Client();
+const client = new Discord.Client({ intents: [Discord.IntentsBitField.Flags.Guilds, Discord.IntentsBitField.Flags.GuildMembers] });
 
 let isBackup = false;
 let isRestore = false;
@@ -50,13 +50,13 @@ client.on('ready', async () => {
             let latestVersion = await VersionControl.checkLibraryVersion(Translator);
             if (fs.existsSync('./package-lock.json')) {
                 let djs = require('./package-lock.json').dependencies['discord.js'].version;
-                let localVersion = djs.split('#')[1];
-                if (localVersion !== latestVersion.sha) throw new Error(Translator.disp('errorNPM2'));
+                let localVersion = djs.split('.').at(-1);
+                if (!latestVersion[0].sha.includes(localVersion)) throw new Error(Translator.disp('errorNPM2'));
             } else if (fs.existsSync('./yarn.lock')) {
                 let parsed = lockfile.parse(fs.readFileSync('./yarn.lock', 'utf8'));
-                let djs = parsed.object['discord.js@git://github.com/hydrabolt/discord.js.git#master'].resolved;
-                let localVersion = djs.split('#')[1];
-                if (localVersion !== latestVersion.sha) throw new Error(Translator.disp('errorNPM2'));
+                let djs = parsed.object['discord.js@dev'].resolved;
+                let localVersion = djs.split('.').at(-2);
+                if (!latestVersion[0].sha.includes(localVersion)) throw new Error(Translator.disp('errorNPM2'));
             } else {
                 throw new Error(Translator.disp('errorNPM1'));
             }
@@ -87,7 +87,7 @@ client.on('ready', async () => {
             throw new Error(Translator.disp('errorRestoreNotExistent', backupFile));
         } else {
             let banCollection = new Discord.Collection();
-            if (settings.copy.Bans) banCollection = await client.guilds.cache.get(originalGuildId).fetchBans();
+            if (settings.copy.Bans) banCollection = await client.guilds.cache.get(originalGuildId).bans.fetch();
             guildData = Serializer.serializeOldGuild(client, originalGuildId, banCollection, guildData, backupFile, Translator);
         }
 
